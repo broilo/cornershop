@@ -8,11 +8,19 @@ In this case study, I developed a solution to predict how long a delivery order 
 
 The corresponding results are located at the folder:
   
-  ./mvp/
+    ./mvp/
+    
+where:
+1. **__preprocess.py** is a py-script with a class of functions associated with the data preprocess step
+2. **mvp.py** is a another python-script which loads the dataset under prediction and performs the necessary data preprocessing. Moreover, this script also load the trainned model and predict the corresponding label/target values.
+3. **20220403_outputs.csv** represents the predicted results. First column contains the order identification and the second (y_hat) is the corresponding order's prediction.
+4. **./notebooks/** folder contains ipynb's associated with those several small steps previously mentioned and properly documented.
 
 ## First Things First: A brief introduction.
 
 Cornershop has operations in several cities and countries, delivering thousands of orders every day. In order to deliver these orders on time Cornershop depends on good estimations of how much time the shopper needs to complete the order.
+
+
 
 
 
