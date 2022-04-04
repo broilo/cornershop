@@ -151,11 +151,252 @@ The above table represents the describe macro-stats,
 
 and in the next to tables depict some other information. 
 
-![Fig. 34](./figs/macro.png)
+![Fig. 4](./figs/macro.png)
 
 ![Fig. 5](./figs/macro_type.png)
 
 Notice that there're missging entries in found_rate, accepted_rate and rating resources. The proper data manipulation associated with these nan's, *a.k.a.* Not A Number, will be properly handle in a forthcoming step.
+
+## [Exploratory Data Analysis](http://localhost:8888/notebooks/Documents/Arbeit/Personal/projects/cornershop/notebooks/part3_eda.ipynb)
+
+The third part of this case study is the data analysis associated with, *e.g.*, univariate analysis and info-tendencies and its correlated behavior with the target/label variable.
+
+### Hypothesis
+
+Let's start by formulating some hypotheses that might be interesting to guide us to tackle the underlying correlated information and to tame some possible misunderstandings associated with how some resource $X_{i}$ might affect the label $y$. In other words, given samples $P(X_{i}|y)$ estimates $P(y|X_{i})$.
+
+![Fig. 6](./figs/hypothesis.png)
+
+## Univariate Analysis
+
+### Resource: Quantity
+
+* This resource is segmented in individual itens and also weigthed itens. 
+* Therefore, it's a bit difficult to work with this resource without performing any change in it.
+    1. **buy_unit** is the measure unit of the **quantity** resource
+    1. **quantity** is simply how many "pieces of itens per products". But when grouped, it means the sum of all these pieces (either in units of UN or KG). Therefore, when grouped it can be interpreted as the total number of piecs of product itens per order.
+    1. **item** is just a tracking resource, *i.e* is can be viewed as a way to identify the number of distinct products.
+
+            quantityByUnit = df_tt[df_tt.buy_unit=='UN'][['order_id','item','quantity']].groupby(by=
+                [
+                    'order_id'
+                ], as_index=False).sum(['item','quantity']).copy()
+
+The discribe-stats are shwown bellow
+
+![Fig. 7](./figs/quantity.png)
+
+Selecting by distinct unit, *i.e.*:
+
+    quantityByUnit = df_tt[df_tt.buy_unit=='UN'][['order_id','item','quantity']].groupby(by=
+        [
+            'order_id'
+        ], as_index=False).sum(['item','quantity']).copy()
+
+![Fig. 8](./figs/quantity_unit.png)
+
+    quantityByKg = df_tt[df_tt.buy_unit=='KG'][['order_id','item','quantity']].groupby(by=
+        [
+            'order_id'
+        ], as_index=False).sum(['item','quantity']).copy()
+
+![Fig. 9](./figs/quantity_kg.png)
+
+Just by analyzing quantity by its repective units, it's easy to see that it leads to complete different values. The following figure displays the density distribution of quantity resource.
+
+![Fig. 9](./figs/quantity_distribution.png)
+
+Notice that it's a left skewed distribution where the means is rougtly as 36 itens per order.
+
+But let's dive a bit deeper in it...
+
+#### Number of itens and distinct items per order
+
+* Calculating **no_itens**: the number of type of itens per order
+    * *i.e*, when **buy_unit** is UN, then number of type of itens is exactly it's quantitiy, else it's zero or null.
+* Calculating **weight**: the weight of the quantity with units of KG
+    * Not a good resource...
+
+![Fig. 10](./figs/no_item_distribution.png)
+
+The number of itens distribution is a left skewed one if mean roughly as 36 itens per order. Therefore, quantity and no_item are basically the same information, and most probably there's a correlation almost one-to-one between them.
+
+![Fig. 11](./figs/item_distribution.png)
+
+On the other hand, the number of distinct itens is about 20 per order, and it's also a left skewd distribution. Therefore, although quantity and distinct might be correlated, in some aspect they can contribute with underlying different aspects of the same information.
+
+### Datetime resource: promised_time
+
+* **promised_time** means the deliver time which was previously promised to the user
+* let's expand this datetime resource in its components
+
+#### day_of_week
+
+1. [0, 1, 2, 3, 4, 5, 6, 7]
+1. [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+
+The **promised_time** (day of week) for the deliveries are all Friday, Saturday and Sunday:
+* $29.08\%$ on Fridays
+* $70.91\%$ on Saturdays
+* $0.0125\%$ on Sundays
+
+The created resource **pure_time** means simply the time as a pure number, *e.g* 13.5 is 13h30min.
+
+![Fig. 12](./figs/pure_time_distribution.png)
+
+* Most probably this is an odd behavior for deliveries
+    1. For **promised_time** less than 5 a.m. and also greater than 20-21 p.m.
+
+Moreover
+* 2019-10-19: 118964 entries
+* 2019-10-18: 39323 entries
+* 2019-10-20: 38 entries
+
+All data corresponds to a range-date of 3 days.
+1. Where only one **promised_time** was set for Sunday (2019-10-20)
+1. Which is another odd behavior
+
+### Rating plus speed resources: found_rate, accepted_rate, rating
+
+* **found_rate** is the percentage of products found by shopper historical.
+* **accepted_rate** is the percentage of orders historically accepted by shopper
+* **rating** means the client rating of shopper
+
+![Fig. 13](./figs/rate_speed.png)
+
+**Notice that:**
+* **found_rate** has a quasi-normal shape (gaussian), for this reason we could say that around $68\%$ can be found in the shopper historical witha a found rate interval of $[\mu-\sigma, \mu+\sigma] = [0.83, 0.89]$
+* **accepted_rate** and **rating** are too much left skewed
+    1. which in fact makes sense, because most of the order must be accecpted by the shopper, otherwise their rating would be low
+    1. however, most of the rating are between 4.8 - 5.0
+    1. most probably there's a strong correlation between these two resources
+* On the other hand, **picking_speed** is right skewed
+
+### Resource: on_demand
+
+* $45.5\%$ of the orders were promised to be delivered in less than X minutes
+* $54.5\%$ otherwise
+
+### Distance Resource
+
+Since there're coordinates resources:
+* **lat**: The latitude of the delivery location
+* **lng**: The longitude of the delivery location
+* **lat**: Latitude of the branch location
+* **lng**: Longitude of the branch location
+
+Therefore, the distance between shopper and deliver location can be calculated.
+
+![Fig. 13](./figs/distance_distribution.png)
+
+This left skewd distribution shows that most users probably lives near by the branch location
+
+![Fig. 14](./figs/distance.png)
+
+* Probably most of the customers are locals, *i.e.* they live near by the shoppers
+* However, there are a few in a **distance** greater than 10 km
+
+### Resource: seniority
+
+* **seniority** is the experience level of the shopper
+
+Percentage of each seniority:
+1. 6c90661e6d2c7579f5ce337c3391dbb9:    $61.3\%$
+1. 50e13ee63f086c2fe84229348bc91b5b:    $22.4\%$
+1. 41dc7c9e385c4d2b6c1f7836973951bf:    $15.1\%$
+1. bb29b8d0d196b5db5a5350e5e3ae2b1f:    $1.3\%$
+
+### Target Analysis: total_minutes
+
+![Fig. 15](./figs/target_distribution.png)
+
+The target distribution is a very smooth right skewed with mean around 81 minutes.
+
+## Bivariate Analysis
+
+### Quantity VS target
+
+![Fig. 16](./figs/quantityVStarget.png)
+
+**Hypothesis 1:** More products ordered imply more time to complete the order $\to$ **Accepted**
+
+### Distance VS target
+
+![Fig. 17](./figs/distanceVStarget.png)
+
+**Hypothesis 2:** The farthest the customer is than more time to complete the order $\to$ **Accepted**
+
+**Hypothesis 9:** The farthest the branch is than more time to complete the order $\to$ **Accepted**
+
+### on_demand VS target
+
+![Fig. 18](./figs/on_demandVStarget.png)
+
+**Hypothesis 3:** If the order is on demand than lesser time to complete the order $\to$ **Accepted**
+
+### seniority VS target
+
+![Fig. 19](./figs/seniorityVStarget.png)
+
+**Hypothesis 4:** High seniority implies less time to complete the order $\to$ **Rejected**
+
+### found_rate VS target
+
+![Fig. 20](./figs/found_rateVStarget.png)
+
+The tie-label corresponds to missing values.
+
+**Hypothesis 5:** High found rate implies less time to complete the order $\to$ **Rejected**
+
+### picking_speed VS target
+
+![Fig. 21](./figs/picking_speedVStarget.png)
+
+**Hypothesis 6:** High picking speed implies less time to complete the order $\to$ **Rejected**
+
+### accepted_rate VS target
+
+![Fig. 22](./figs/accepted_rateVStarget.png)
+
+The tie-label corresponds to missing values.
+
+**Hypothesis 7:** High accepted rate implies less time to complete the order $\to$ **Rejected**
+
+### rating VS target
+
+![Fig. 23](./figs/ratingVStarget.png)
+
+The tie-label corresponds to missing values.
+
+**Hipotheses 8:** High rating implies less time to complete the order $\to$ **Rejected**
+
+## Correlation Analysis
+
+### Pairwise analysis
+
+**Please check the corresponding figure in the notebook**
+
+* Fot the majority of resources the pairwise plot didn't show a "preferred direction". 
+* Regarding the quantity, item and no_item resources the presence of a preferred directions is simply because the three resource means basically the same info. 
+* However there's a slightly pairwise correlation between quantity VS total_minutes (which is the Hypothesis 1)
+
+### Cross-correlation Analysis
+
+First, it will be necessary to apply an encoding to categorical variables, in addition to transforming variables with more than one categories
+
+**Please check the corresponding figure in the notebook**
+
+## Hypothesis Conclusion
+
+![Fig. 24](./figs/hypothesis_conclusion.png)
+ 
+Notice that only four out of nine hypotheses were accepted.  On the other hand, this result doesn't necessary imply that the rejected ones won't play an important part when predicting the label.
+
+# [Preprocess](http://localhost:8888/notebooks/Documents/Arbeit/Personal/projects/cornershop/notebooks/part4_preprocess.ipynb)
+
+The fouth part is associated with all those findings during the EDA step and that now will be properly applied into the dataset.
+
+
 
 
 
