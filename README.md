@@ -107,6 +107,57 @@ The second part of this case project is associated with to consolidade the analy
 
 The quantity resource corresponds to how much of a single product the order posses. *E.g* the maximum value found is of 70 and minimum is of 0.055. However, the values in it might be in the dimensions of "units of bits of products" (1,2,3,...) or a produtc's wight (1.7, 2.3, 3,...).
 
+The above tables displays some basic stats regarding order products.
+
+![Fig. 1](./figs/order_products.png)
+
+![Fig. 2](./figs/order_products_type.png)
+
+Notice that there're some missing values in quantity and buy_unit, which make sense because if there isn't a quantity there's no way of knowing its unit.
+
+### Dataset's Macro View: Order Level
+
+Let's analyze the order's level dataset, *i.e*. the deliveries infos summarized. 
+
+        macro = df_tt[df_tt.columns].groupby(by=[
+            'order_id',
+            'shopper_id',
+            'store_branch_id',
+            'store_id',
+            'seniority',
+            'on_demand',
+            'promised_time'
+        ], as_index=False).agg(
+            {
+                'lat_order':['mean'],
+                'lng_order':['mean'],
+                'total_minutes':['mean'],
+                'found_rate':['mean'],
+                'picking_speed':['mean'],
+                'accepted_rate':['mean'],
+                'rating':['mean'],
+                'lat_storebranch':['mean'],
+                'lng_storebranch':['mean'],
+                'quantity':['sum'],
+                'item':['sum']
+            }
+        ).copy()
+
+        macro.columns = macro.columns.droplevel(1)
+
+The above table represents the describe macro-stats,
+
+![Fig. 3](./figs/macro_describe.png)
+
+and in the next to tables depict some other information. 
+
+![Fig. 34](./figs/macro.png)
+
+![Fig. 5](./figs/macro_type.png)
+
+Notice that there're missging entries in found_rate, accepted_rate and rating resources. The proper data manipulation associated with these nan's, *a.k.a.* Not A Number, will be properly handle in a forthcoming step.
+
+
+
+
 TO BE CONTINUED...
-
-
