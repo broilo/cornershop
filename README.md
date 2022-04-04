@@ -397,6 +397,141 @@ Notice that only four out of nine hypotheses were accepted.  On the other hand, 
 The fouth part is associated with all those findings during the EDA step and that now will be properly applied into the dataset.
 
 
+## Replace Missing Values
+
+### Resources
+1. found_rate
+1. accepted_rate
+1. rating
+1. quantity
+
+In order to avoid removing missing entries, I'll simply replace it by some value. In this case I chose to replace them by the corresponding resource median, because median is less affected by possible outlier values.
+
+## Feature Engineering
+
+### Resources Created
+1. day_of_week: associated with the promise_time
+1. pure_time: associated with the promise_time
+1. distance: associated with latitude and longitude from the branch and  delivery location
+1. no_items: associated with quantity
+1. weight: associated with quantity
+1. item: associated with quantity
+
+## Outlier Analysis
+
+### Turkys' Interquartile Method
+
+![Fig. 25](./figs/outlier.png)
+
+* The only resource I'll will adjust is the **pure_time**
+    1. all values lesser than 10 will be freezed at percentile 0.25
+    1. all values grater than 21 will be freezed at percentile 0.75
+* Simply because 10h to 21h is period of time that makes sense for deliveries.
+
+### Percentile-Freeze
+
+![Fig. 26](./figs/high.png)
+![Fig. 27](./figs/low.png)
+
+Around 1999 entries were related to pure_time valeus greater than 20.67h and around 1896 lesser than 15h. Therefore for any given pure_time value greater than 20.67 or lesser than 15, they were freeze in precisely this values, which corresponds to the 0.75 and 0.25 percentile, respectively.
+
+# [Model](http://localhost:8888/notebooks/Documents/Arbeit/Personal/projects/cornershop/notebooks/part5a_model_default.ipynb)
+
+The fifth part is associated with the model's train and evaluation.
+## Splitting Train/Test data: 80/20
+The dataset which was set aside to simmulate an input data from the real world was actualy 20% from the initial full-merged dataset. For this reason I decided to split the train/test data into 80/20, so keeping the initial imbalanced size.
+
+Moreover, I also tested four different sets of feature combination, by taking into account the created resources and some of the finding results from the hypothesis testing:
+
+    features = [
+        'seniority_41dc7c9e385c4d2b6c1f7836973951bf',
+        'seniority_50e13ee63f086c2fe84229348bc91b5b',
+        'seniority_6c90661e6d2c7579f5ce337c3391dbb9',
+        'seniority_bb29b8d0d196b5db5a5350e5e3ae2b1f',
+        'on_demand',
+        #day_of_week,
+        'pure_time',
+        'found_rate',
+        'picking_speed',
+        'accepted_rate',
+        'rating',
+        'distance',
+        'no_item',
+        'quantity',
+        'item'
+    ]
+
+    features_set1 = list(df[features].drop(columns=['no_item','item']))
+    features_set2 = list(df[features].drop(columns=[
+        'seniority_41dc7c9e385c4d2b6c1f7836973951bf',
+        'seniority_50e13ee63f086c2fe84229348bc91b5b',
+        'seniority_6c90661e6d2c7579f5ce337c3391dbb9',
+        'seniority_bb29b8d0d196b5db5a5350e5e3ae2b1f' 
+    ]))
+    features_set3 = list(df[features].drop(columns=['rating','no_item','item']))
+    features_set4 = features
+
+## Models Tested
+
+1. Baseline: Linear Regressor
+1. Support Vector Regressor
+1. XGBoost
+1. CatBoos
+
+In orer just to start tackling the prediction problem, I chose to only work with its default version, *i.e.* Parameters and Hyperparameters loaded with its default values.
+
+The following tables summarize the results by taking into account some metrics for fit-quality and loss function.
+
+![Fig. 28](./figs/model_result1.png)
+
+The best results were obtained by means of Set 2 and 4:
+
+![Fig. 29](./figs/model_result2.png)
+
+The loss function by model per set (root mean square error) are depicted in the above picture.
+
+![Fig. 30](./figs/loss_function.png)
+
+Notice that the CatBoost regressor shows the lowest rmse-value, but XGBoost also presents a low rmse-value (around $3\%$ greater than the CatBoost in Set 2 and $4\%$ grater in Set 4).
+
+The following picture displays the fit-quality (goodness-of-fit) by considering the four different sets. Notice that this metrics simply means how much variance the model can indeed explain. 
+
+![Fig. 31](./figs/r2adjust.png)
+
+Notice that CatBoost has the largest values of goodness-of-fit, around $6\%$ greater than XGBoost by considering Set 2 and $8\%$ greater in Set 4.
+
+However, since I didn't quite understand what actualy happened with CatBoost1 train score, I decided to fine-tune the XGBoost regressor isntead of  CatBoost, more specifically taking into account the features' set 2 and 4.
+
+# [Fine-Tune](http://localhost:8888/notebooks/Documents/Arbeit/Personal/projects/cornershop/notebooks/part5b_model_xgboost.ipynb) and [Predict](http://localhost:8888/notebooks/Documents/Arbeit/Personal/projects/cornershop/notebooks/part6_mvp.ipynb)
+
+The last, but not least part of the case study is the model's fine-tune process and the label prediction. This corresponds to the minimal viable product (mvp) to be delivered.
+
+## XGBoost Regressor: Random Search
+
+    model = xgb.XGBRegressor()
+
+    params = {
+        "colsample_bytree": uniform(0.7, 0.3), #default=1
+        "gamma": uniform(0, 0.5), #default=0
+        "learning_rate": uniform(0.03, 0.3), # default=0.3
+        "max_depth": randint(2, 6), # default=6
+        "n_estimators": randint(100, 150), # default=100
+        "subsample": uniform(0.6, 0.4), # default=1
+    }
+
+    search = RandomizedSearchCV(
+        model, 
+        param_distributions=params, 
+        random_state=SEED, 
+        n_iter=200, 
+        cv=3, 
+        verbose=1, 
+        n_jobs=1, 
+        return_train_score=True
+    )
+
+
+
 
 
 
