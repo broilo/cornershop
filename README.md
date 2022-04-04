@@ -542,7 +542,7 @@ and Set 4
 
 ![Fig. 33](./figs/feature_importance_set4.png)
 
-Notice that they importance patterns very much alike, the only difference being the addition of the seniority resource in set 4.
+Notice that the importance patterns are very much alike, the only difference being the addition of the seniority resource in set 4.
 
 ### Overall Result
 
