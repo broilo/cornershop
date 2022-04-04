@@ -504,7 +504,7 @@ However, since I didn't quite understand what actualy happened with CatBoost1 tr
 
 # [Fine-Tune](http://localhost:8888/notebooks/Documents/Arbeit/Personal/projects/cornershop/notebooks/part5b_model_xgboost.ipynb) and [Predict](http://localhost:8888/notebooks/Documents/Arbeit/Personal/projects/cornershop/notebooks/part6_mvp.ipynb)
 
-The last, but not least part of the case study is the model's fine-tune process and the label prediction. This corresponds to the minimal viable product (mvp) to be delivered.
+The last but not least part of the case study is the model's fine-tune process and the label prediction. This corresponds to the minimal viable product (mvp) to be delivered.
 
 ## XGBoost Regressor: Random Search
 
@@ -530,10 +530,28 @@ The last, but not least part of the case study is the model's fine-tune process 
         return_train_score=True
     )
 
+### Feature Importances
 
+**Side Note:** I was trying to use SHAP-values anlysis, however for some reason I had an issue regarding numpy and numba version. Therefore, I used the feature importance instance default by the XGBoost.
 
+The corresponding feature importances by taking into account the Set 2
 
+![Fig. 32](./figs/feature_importance_set2.png)
 
+and Set 4
 
+![Fig. 33](./figs/feature_importance_set4.png)
 
-TO BE CONTINUED...
+Notice that they importance patterns very much alike, the only difference being the addition of the seniority resource in set 4.
+
+### Overall Result
+
+![Fig. 34](./figs/overall.png)
+
+Indeed, the set 4 implied in a slightly better metrics than set 2. Then, the Champion Model chose is the fine-tuned XGBoost regressor with features' set 4: [./mvp/20220403_set4_XGBRegressor.sav](https://github.com/broilo/cornershop/tree/main/mvp)
+
+### Finally, the predicted total_minutes distribution
+
+![Fig. 34](./figs/prediction.png)
+
+Notice that the predicted distribution is very much similiar to the trainning label. The mean predicted value is around 81.6 minutes (mean trainning label 81.1 minutes). 
